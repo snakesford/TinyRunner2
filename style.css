@@ -51,6 +51,7 @@
     button:hover { transform: translateY(-1px); border-color: #334165; }
     button:active { transform: translateY(1px); }
     button.primary { background: #0f1a2a; border-color: #2c4760; box-shadow: 0 0 0 3px rgba(125,211,252,.25) inset; }
+    button.active { background: #0f1a2a; border-color: #7dd3fc; box-shadow: 0 0 0 2px rgba(125,211,252,.15) inset; }
 
     canvas {
       width: 100%;

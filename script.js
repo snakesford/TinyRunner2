@@ -11,6 +11,16 @@ const gameoverEl = document.getElementById("gameover");
 
 const startBtn = document.getElementById("startBtn");
 const pauseBtn = document.getElementById("pauseBtn");
+const skinWhiteBtn = document.getElementById("skinWhiteBtn");
+const skinRedBtn = document.getElementById("skinRedBtn");
+const skinMonsterBtn = document.getElementById("skinMonsterBtn");
+
+// Load monster image
+const monsterImage = new Image();
+monsterImage.src = "monster.png";
+monsterImage.onerror = function() {
+  console.warn("Failed to load monster.png image. Falling back to block style.");
+};
 
 // ---- Game constants (tweak these for feel)
 const GRAVITY = 0.9;
@@ -33,6 +43,7 @@ let elapsed = 0;
 let score = 0;
 let cleared = 0;
 let speed = SPEED_START;
+let animationFrameId = null;
 
 let highScore = Number(localStorage.getItem("tinyDinoHigh") || 0);
 highEl.textContent = highScore;
@@ -49,11 +60,20 @@ const dino = {
   holdStart: 0,
 };
 
+// Character skin (white, red, or monster)
+let dinoSkin = localStorage.getItem("tinyDinoSkin") || "white";
+
 // Obstacles pool
 let obstacles = [];
 let nextSpawnX = canvas.width + 200;
 
 function resetGame() {
+  // Cancel any existing animation frame to prevent multiple loops
+  if (animationFrameId !== null) {
+    cancelAnimationFrame(animationFrameId);
+    animationFrameId = null;
+  }
+
   running = true;
   paused = false;
   lastTime = performance.now();
@@ -72,11 +92,15 @@ function resetGame() {
 
   gameoverEl.classList.remove("show");
   pauseBtn.textContent = "Pause";
-  requestAnimationFrame(loop);
+  animationFrameId = requestAnimationFrame(loop);
 }
 
 function gameOver() {
   running = false;
+  if (animationFrameId !== null) {
+    cancelAnimationFrame(animationFrameId);
+    animationFrameId = null;
+  }
   gameoverEl.classList.add("show");
   if (score > highScore) {
     highScore = score;
@@ -124,13 +148,45 @@ window.addEventListener("pointerup", () => setHoldJump(false));
 startBtn.addEventListener("click", resetGame);
 pauseBtn.addEventListener("click", togglePause);
 
+function changeSkin(color) {
+  dinoSkin = color;
+  localStorage.setItem("tinyDinoSkin", color);
+  updateSkinButtons();
+}
+
+function updateSkinButtons() {
+  // Remove active class from all buttons
+  skinWhiteBtn.classList.remove("active");
+  skinRedBtn.classList.remove("active");
+  skinMonsterBtn.classList.remove("active");
+  
+  // Add active class to current skin
+  if (dinoSkin === "white") {
+    skinWhiteBtn.classList.add("active");
+  } else if (dinoSkin === "red") {
+    skinRedBtn.classList.add("active");
+  } else if (dinoSkin === "monster") {
+    skinMonsterBtn.classList.add("active");
+  }
+}
+
+skinWhiteBtn.addEventListener("click", () => changeSkin("white"));
+skinRedBtn.addEventListener("click", () => changeSkin("red"));
+skinMonsterBtn.addEventListener("click", () => changeSkin("monster"));
+updateSkinButtons();
+
 function togglePause() {
   if (!running) return;
   paused = !paused;
   pauseBtn.textContent = paused ? "Resume" : "Pause";
   if (!paused) {
     lastTime = performance.now();
-    requestAnimationFrame(loop);
+    animationFrameId = requestAnimationFrame(loop);
+  } else {
+    if (animationFrameId !== null) {
+      cancelAnimationFrame(animationFrameId);
+      animationFrameId = null;
+    }
   }
 }
 
@@ -338,16 +394,28 @@ function draw() {
     ctx.stroke();
   }
 
-  // Dino (simple blocky runner)
-  ctx.fillStyle = "#e6e9ef";
-  ctx.fillRect(dino.x, dino.y, dino.w, dino.h);
-  // eye
-  ctx.fillStyle = "#0b0d12";
-  ctx.fillRect(dino.x + dino.w - 12, dino.y + 12, 4, 4);
-  // legs (animate via score)
-  const legPhase = Math.floor(score / 6) % 2;
-  ctx.fillRect(dino.x + 8, dino.y + dino.h - 6, 8, 6);
-  ctx.fillRect(dino.x + (legPhase ? 28 : 20), dino.y + dino.h - 6, 8, 6);
+  // Dino (simple blocky runner or monster image)
+  if (dinoSkin === "monster") {
+    // Draw monster image
+    if (monsterImage.complete) {
+      ctx.drawImage(monsterImage, dino.x, dino.y, dino.w, dino.h);
+    } else {
+      // Fallback to white block while image loads
+      ctx.fillStyle = "#e6e9ef";
+      ctx.fillRect(dino.x, dino.y, dino.w, dino.h);
+    }
+  } else {
+    // Draw colored block
+    ctx.fillStyle = dinoSkin === "red" ? "#ef4444" : "#e6e9ef";
+    ctx.fillRect(dino.x, dino.y, dino.w, dino.h);
+    // eye
+    ctx.fillStyle = "#0b0d12";
+    ctx.fillRect(dino.x + dino.w - 12, dino.y + 12, 4, 4);
+    // legs (animate via score)
+    const legPhase = Math.floor(score / 6) % 2;
+    ctx.fillRect(dino.x + 8, dino.y + dino.h - 6, 8, 6);
+    ctx.fillRect(dino.x + (legPhase ? 28 : 20), dino.y + dino.h - 6, 8, 6);
+  }
 
   // Obstacles
   ctx.fillStyle = "#7dd3fc";
@@ -405,14 +473,23 @@ function draw() {
 }
 
 function loop(t) {
-  if (!running || paused) return;
+  if (!running || paused) {
+    animationFrameId = null;
+    return;
+  }
   const dt = t - lastTime;
+  // Cap delta time to prevent huge jumps (e.g., after long pause or tab switch)
+  const cappedDt = Math.min(dt, 100);
   lastTime = t;
 
-  update(dt);
+  update(cappedDt);
   draw();
 
-  if (running) requestAnimationFrame(loop);
+  if (running) {
+    animationFrameId = requestAnimationFrame(loop);
+  } else {
+    animationFrameId = null;
+  }
 }
 
 // initial draw
