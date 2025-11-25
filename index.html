@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tiny Dino Runner</title>
+  <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="row" style="justify-content: space-between;">
+        <div>
+          <h1>🦖 Tiny Dino Runner</h1>
+          <div class="muted">Jump over cacti. Speed ramps forever. One hit = toast.</div>
+        </div>
+        <div class="row">
+          <button id="startBtn" class="primary">Start / Restart</button>
+          <button id="pauseBtn" class="ghost">Pause</button>
+        </div>
+      </div>
+
+      <canvas id="game" width="900" height="420" aria-label="game canvas"></canvas>
+
+      <div class="hint">
+        Controls: <b>Space</b> / <b>W</b> / <b>↑</b> / <b>Tap</b> to jump. <b>P</b> to pause.  
+        Tip: hold jump slightly longer for a higher arc (tiny “variable jump”).
+      </div>
+    </div>
+
+    <div class="card hud">
+      <div class="stat">
+        <div class="label">Score</div>
+        <div class="big" id="score">0</div>
+      </div>
+      <div class="stat">
+        <div class="label">High score</div>
+        <div class="big" id="high">0</div>
+      </div>
+      <div class="stat">
+        <div class="label">Speed</div>
+        <div class="big"><span id="speed">6.0</span> <span class="pill">px/frame</span></div>
+      </div>
+      <div class="stat">
+        <div class="label">Obstacles jumped</div>
+        <div class="big" id="cleared">0</div>
+      </div>
+
+      <div id="gameover" class="gameover">
+        Game over! Press <b>Start / Restart</b> or hit <b>Space</b>.
+      </div>
+    </div>
+  </div>
+
+  <script type="text/javascript" src="script.js"></script>
+</body>
+</html>
